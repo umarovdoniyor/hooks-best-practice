@@ -1,4 +1,4 @@
-import React, {useState, useReducer, useCallback} from "react";
+import React, {useReducer, useCallback, useMemo} from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -28,6 +28,8 @@ const httpReducer = (currHttpState, action) => {
       return {loading: false, error: action.errorMessage};
     case "CLEAR":
       return {...currHttpState, error: null};
+    default:
+      throw new Error("Should not get there!");
   }
 };
 
@@ -37,28 +39,8 @@ const Ingredients = () => {
     loading: false,
     error: null
   });
-  // const [userIngredients, setUserIngredients] = useState([]);
-  // const [isLoading, setIsLoading] = useState(false);
-  // const [error, setError] = useState();
 
-  // useEffect(() => {
-  //   fetch("https://react-hooks-practice-c7b86.firebaseio.com/ingredients.json")
-  //     .then(response => response.json())
-  //     .then(responseData => {
-  //       console.log(responseData);
-  //       const loadedIngredients = [];
-  //       for (const key in responseData) {
-  //         loadedIngredients.push({
-  //           id: key,
-  //           title: responseData[key].title,
-  //           amount: responseData[key].amount
-  //         });
-  //       }
-  //       setUserIngredients(loadedIngredients);
-  //     });
-  // }, []);
-
-  const addIngredientHandler = ingredient => {
+  const addIngredientHandler = useCallback(ingredient => {
     // setIsLoading(true);
     dispatchHttp({type: "SEND"});
     fetch(
@@ -85,9 +67,9 @@ const Ingredients = () => {
           ingredient: {id: responseData.name, ...ingredient}
         });
       });
-  };
+  }, []);
 
-  const removeIngredientHandler = ingredientId => {
+  const removeIngredientHandler = useCallback(ingredientId => {
     // setIsLoading(true);
     dispatchHttp({type: "SEND"});
     fetch(
@@ -109,18 +91,26 @@ const Ingredients = () => {
         // setError("Something went wrong!");
         // setIsLoading(false);
       });
-  };
+  }, []);
 
   const filteredIngredientsHandler = useCallback(filteredIngredients => {
     // setUserIngredients(filteredIngredients);
     dispatch({type: "SET", ingredients: filteredIngredients});
   }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     // setError(null);
     // isLoading(false);
     dispatchHttp({type: "CLEAR"});
-  };
+  }, []);
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList
+        ingredients={userIngredients}
+        onRemoveItem={removeIngredientHandler}
+      />
+    );
+  }, [userIngredients, removeIngredientHandler]);
 
   return (
     <div className="App">
@@ -134,10 +124,7 @@ const Ingredients = () => {
 
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
-        <IngredientList
-          ingredients={userIngredients}
-          onRemoveItem={removeIngredientHandler}
-        />
+        {ingredientList}
       </section>
     </div>
   );
